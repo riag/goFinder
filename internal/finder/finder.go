@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
-	"syscall"
+	"gofinder/internal/platform"
 )
 
 // Kind is what an item is, for its icon.
@@ -295,9 +295,6 @@ func Locations(home, volumesDir string) []Item {
 
 var uuidName = regexp.MustCompile(`^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$`)
 
-// mntDontBrowse marks a volume that Finder does not show (MNT_DONTBROWSE):
-// Recovery, Preboot, VM and the like.
-const mntDontBrowse = 0x00100000
 
 // Volumes lists the volumes mounted in dir that Finder shows: not the
 // startup disk (a link to "/"), not hidden ones, not system volumes
@@ -314,7 +311,7 @@ func Volumes(dir string) []string {
 		if t, err := filepath.EvalSymlinks(p); err != nil || t == "/" {
 			continue
 		}
-		if hiddenMount(p) {
+		if platform.HiddenMount(p) {
 			continue
 		}
 		vols = append(vols, p)
@@ -322,23 +319,6 @@ func Volumes(dir string) []string {
 	return vols
 }
 
-// hiddenMount tells whether p is a mount point Finder doesn't show. A
-// folder that is not a mount point has its volume's flags (the hidden
-// Data volume's, for one under /Volumes), so only mount points count.
-func hiddenMount(p string) bool {
-	var st syscall.Statfs_t
-	if syscall.Statfs(p, &st) != nil || st.Flags&mntDontBrowse == 0 {
-		return false
-	}
-	var on []byte
-	for _, c := range st.Mntonname {
-		if c == 0 {
-			break
-		}
-		on = append(on, byte(c))
-	}
-	return string(on) == p
-}
 
 // NewWindowDir is where Finder opens a new window (its NewWindowTarget
 // preference), home when that can't be read or is gone.

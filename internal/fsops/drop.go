@@ -2,9 +2,7 @@ package fsops
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
-	"syscall"
 
 	"gofinder/internal/vfs"
 )
@@ -43,29 +41,25 @@ func DropOp(srcs []string, dst string, mod DropMod) Op {
 	case DropMove:
 		return OpMove
 	}
-	dd, ok := device(dst)
-	if !ok || len(srcs) == 0 {
+	// 原实现
+	// dd, ok := device(dst)
+	// if !ok || len(srcs) == 0 {
+	// 	return OpCopy
+	// }
+	// for _, s := range srcs {
+	// 	// The item's folder: a symlink lives on its folder's volume.
+	// 	if sd, ok := device(filepath.Dir(s)); !ok || sd != dd {
+	// 		return OpCopy
+	// 	}
+	// }
+	// return OpMove
+	// 
+
+	if len(srcs) == 0{
 		return OpCopy
 	}
-	for _, s := range srcs {
-		// The item's folder: a symlink lives on its folder's volume.
-		if sd, ok := device(filepath.Dir(s)); !ok || sd != dd {
-			return OpCopy
-		}
-	}
-	return OpMove
-}
-
-func device(p string) (uint64, bool) {
-	fi, err := os.Stat(p)
-	if err != nil {
-		return 0, false
-	}
-	st, ok := fi.Sys().(*syscall.Stat_t)
-	if !ok {
-		return 0, false
-	}
-	return uint64(st.Dev), true
+	//TODO
+	return OpCopy
 }
 
 // CheckDrop refuses a drop Finder refuses: into an archive, or a folder
